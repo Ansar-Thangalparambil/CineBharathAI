@@ -1,28 +1,42 @@
 import streamlit as st
-# Import the functions we just wrote in recommender.py
-from recommender import load_and_clean_data, compute_similarity_matrix, get_content_recommendations
+from recommender import fetch_live_trending_movies
 
-st.title("🎬 Modular Movie Recommendation Hub")
+st.set_page_config(page_title="CineBharat AI", layout="wide")
 
-# 1. Load data using cached functions from recommender file
-movies = load_and_clean_data()
-cosine_sim = compute_similarity_matrix(movies)
+st.title("🇮🇳 CineBharat AI: Real-Time Discovery Engine")
 
-# 2. Setup the Dropdown
-selected_movie = st.selectbox(
-    "Select a movie you like:",
-    movies['title'].values
+# Your API key is added directly here so you don't have to type it on screen
+api_key = "39f7844eaa2a8a841f841249fb5989a7"
+
+# Setup the UI Controls
+language = st.selectbox(
+    "Select Regional Cinema:",
+    ["Malayalam", "Hindi (Bollywood)", "Tamil", "Telugu"]
 )
 
-# 3. Handle Button Click
-if st.button("Get Recommendations"):
-    # Call the recommendation logic engine from our other file
-    results = get_content_recommendations(selected_movie, movies, cosine_sim)
-    
-    if results:
-        st.subheader("You might also enjoy:")
-        for idx, movie in enumerate(results, 1):
-            st.write(f"🍿 **{idx}.** {movie}")
-    else:
-        st.error("Movie not found or error calculating results.")
+# A dictionary to translate English names to TMDB language codes
+lang_codes = {
+    "Malayalam": "ml",
+    "Hindi (Bollywood)": "hi",
+    "Tamil": "ta",
+    "Telugu": "te"
+}
+
+# The Live Fetch Button
+if st.button(f"Fetch Live Trending {language} Movies"):
+    with st.spinner('Connecting to live database...'):
         
+        # Call our API function from recommender.py
+        live_data = fetch_live_trending_movies(api_key, lang_codes[language])
+        
+        if not live_data.empty:
+            st.subheader(f"🔥 Top Trending {language} Movies Right Now")
+            
+            # Display the data in a beautiful interactive table
+            st.dataframe(
+                live_data[['Title', 'Rating', 'Release Date', 'Overview']], 
+                use_container_width=True,
+                hide_index=True
+            )
+        else:
+            st.error("Could not fetch data. Please check your internet connection or API key.")
